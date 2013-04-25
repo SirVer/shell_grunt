@@ -8,17 +8,23 @@ __ https://github.com/gorakhargosh/watchdog
 Installation
 ------------
 
-   pip install git+git://github.com/sirver/shell_grunt.git
+.. code-block:: bash
+
+   pip install git+git://github.com/SirVer/shell_grunt.git
+
+or clone and
+
+.. code-block:: bash
+
+   pip install .
 
 Usage
 -----
 
-This is a script that I use to build one of my projects.
+This is a Python script that I use to build one of my projects. This example
+shows off all of the current features and should get you started.
 
 .. code-block:: python
-
-   #!/usr/bin/env python
-   # encoding: utf-8
 
    import os.path
 
@@ -49,14 +55,14 @@ This is a script that I use to build one of my projects.
    # A work item that builds my Project.
    class BuildWidelands(WorkItem):
        name = "Building widelands"
-       command = lambda selp, paths: ["make", "-j5", "-k"]
+       command = lambda self, paths: ["make", "-j5", "-k"]
 
        # The stdout and stderr can be found in this file, when the WorkItem is
        # done running.
        output_file = "/tmp/wl_errors.log"
 
-       # This file will gets stdout and stderr of this work item streamed.
-       # Useful for tail -f.
+       # This file will receive stdout and stderr of this work item as they
+       # are read by shell grunt. Useful for tail -f.
        output_stream = "/tmp/wl_errors_stream.log"
 
        # The working directory for this WorkItem.
