@@ -36,8 +36,10 @@ class WorkItem(object):
     output_copy = False
     output_stream = None
     cwd = None
+    on_success = None
 
     def __init__(self):
+        self.rv = None
         self.reschedule()
         self._paths = set()
 
@@ -48,14 +50,13 @@ class WorkItem(object):
         sys.stdout.write(Fore.BLUE + "Begin: " + self.name + Fore.RESET + "\n"); sys.stdout.flush()
 
     def report_finish(self):
-        rv = self._running_cmd.wait()
         took = time.time() - self._start_time
 
         sys.stdout.write(self.name + " ... ");
-        if rv == 0:
+        if self.rv == 0:
             sys.stdout.write(Fore.GREEN + "Success." + Fore.RESET)
         else:
-            sys.stdout.write(Fore.RED + "Failed: %i." % rv + Fore.RESET)
+            sys.stdout.write(Fore.RED + "Failed: %i." % self.rv + Fore.RESET)
 
         sys.stdout.write(" (%.2f sec)" % took)
         sys.stdout.write("\n")
@@ -113,7 +114,7 @@ class WorkItem(object):
 
 
     def finish(self):
-        self._running_cmd.wait()
+        self.rv = self._running_cmd.wait()
 
         self.report_finish()
 
@@ -147,7 +148,7 @@ class Executor(object):
     def _run_scheduled(self):
         now = time.time()
         for item in self._scheduled:
-            if now > item.run_at:
+            if now > item.run_at and not self._is_running(item.__class__):
                 item.launch()
                 self._scheduled.remove(item)
                 self._running.append(item)
@@ -157,7 +158,10 @@ class Executor(object):
         if not self._running: return
         for idx in range(len(self._running)):
             if not self._running[idx].still_running():
-                self._running[idx].finish()
+                item = self._running[idx]
+                item.finish()
+                if item.rv == 0 and item.on_success:
+                    self._scheduled.append(item.on_success())
                 del self._running[idx]
 
                 return self._cleanup_running()
@@ -169,6 +173,13 @@ class Executor(object):
                 a._paths.add(path)
                 return True
         return False
+
+    def _is_running(self, item_type):
+        for item in self._running:
+            if item.__class__ == item_type:
+                return True
+        return False
+
 
     def _check_for_work(self):
         self._run_scheduled()
