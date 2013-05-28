@@ -161,7 +161,9 @@ class Executor(object):
                 item = self._running[idx]
                 item.finish()
                 if item.rv == 0 and item.on_success:
-                    self._scheduled.append(item.on_success())
+                    if (not self.is_scheduled(item.__class__, "") and
+                        not self.is_scheduled(item.on_success, "")):
+                        self._scheduled.append(item.on_success())
                 del self._running[idx]
 
                 return self._cleanup_running()
@@ -170,7 +172,8 @@ class Executor(object):
         for a in self._scheduled:
             if a.__class__ is item_type:
                 a.reschedule()
-                a._paths.add(path)
+                if path:
+                    a._paths.add(path)
                 return True
         return False
 
